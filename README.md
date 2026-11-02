@@ -185,3 +185,16 @@ To ensure data integrity under invalid inputs and edge cases, invariants are enf
   - `chk_bills_total_cents_positive` and `chk_shares_amount_cents_positive`: Guarantee monetary values are positive integers at the storage engine level.
   - `chk_homes_name_not_empty` and `chk_members_name_not_empty`: Guard against blank or whitespace-only names.
 - The Hono API layer validates incoming requests before querying the database, returning consistent, typed JSON errors (`{ "error": "message" }`) with appropriate HTTP status codes (e.g., 422 for non-positive or non-integer cents and homes without members, 404 for missing entities, and 400 for missing idempotency keys). This ensures client feedback is explicit and predictable while keeping storage corruption impossible.
+
+
+
+## Decisions
+
+### 1. Store Money as Integer Cents
+All monetary values are stored as integers in cents instead of floating-point decimals. This avoids rounding errors and ensures accurate bill calculations.
+
+### 2. Distribute Remaining Cents by Member Order
+Bills are divided equally among all home members. Any remaining cents are distributed one by one in the order members were added, ensuring that the total shares always equal the original bill amount.
+
+### 3. Ensure Safe and Idempotent Payments
+Payments use an idempotency key to prevent duplicate processing. Database-level safeguards and atomic updates protect payment records from concurrent requests and maintain data consistency.
